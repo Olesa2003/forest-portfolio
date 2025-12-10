@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Forest Dev Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="game-wrapper">
+      <canvas id="game" width="1152" height="768"></canvas>
+
+      <!-- HUD: левый верхний угол -->
+      <div class="hud hud-top-left">
+        <div class="card dev-card">
+          <div class="dev-header">
+            <canvas id="avatar" width="48" height="48"></canvas>
+            <div>
+              <div class="dev-name">Timur / Hiki</div>
+              <div class="dev-role">Video / Motion / AI</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HUD: правый верхний угол — миникарта -->
+      <div class="hud hud-top-right">
+        <div class="card minimap-card">
+          <div class="minimap-header">
+            <span>Карта леса</span>
+            <label class="zoom-label">
+              Зум
+              <input id="minimapZoom" type="range" min="0.5" max="1" step="0.25" value="0.75" />
+            </label>
+          </div>
+          <canvas id="minimap" width="200" height="200"></canvas>
+          <div class="legend">
+            <div><span class="legend-color hero"></span>Ты</div>
+            <div><span class="legend-color chest"></span>Проекты</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HUD: левый низ — ачивки -->
+      <div class="hud hud-bottom-left">
+        <div class="card achievements-card">
+          <div class="card-title">Достижения</div>
+          <ul id="achievementsList"></ul>
+        </div>
+      </div>
+
+      <!-- HUD: правый низ — управление -->
+      <div class="hud hud-bottom-right">
+        <div class="card controls-card">
+          <div class="card-title">Управление</div>
+          <p>WASD / стрелки — движение</p>
+          <p>E / Enter — взаимодействие с сундуками</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Диалоги / резюме -->
+  <div id="dialogOverlay" class="dialog-overlay hidden">
+    <div class="dialog-window">
+      <h3 id="dialogTitle"></h3>
+      <p id="dialogText"></p>
+      <a id="dialogLink" href="#" target="_blank"></a>
+      <button id="dialogClose">Закрыть (Space / Esc)</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
