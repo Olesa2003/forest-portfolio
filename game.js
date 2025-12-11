@@ -40,6 +40,36 @@ const gameOverRestartBtn = document.getElementById("gameOverRestart");
 const boardOverlay = document.getElementById("boardOverlay");
 const boardCloseBtn = document.getElementById("boardClose");
 
+// --- Музыка -----------------------------------------------
+
+// Имя файла должно совпадать с реальным:
+const bgMusic = new Audio("ES_The King's Carpet - Deskant.mp3");
+bgMusic.loop = true;
+bgMusic.volume = 0.35;
+
+let musicStarted = false;
+
+const musicVolumeInput = document.getElementById("musicVolume");
+musicVolumeInput.addEventListener("input", () => {
+  bgMusic.volume = parseFloat(musicVolumeInput.value);
+});
+
+function ensureMusicStarted() {
+  if (musicStarted) return;
+  musicStarted = true;
+  bgMusic
+    .play()
+    .catch(() => {
+      // если браузер не даёт авто-плей — просто игнорируем,
+      // музыка запустится при следующем действии
+    });
+}
+
+// включаем музыку при любом взаимодействии
+["keydown", "mousedown", "touchstart"].forEach((evt) => {
+  window.addEventListener(evt, ensureMusicStarted, { once: true });
+});
+
 // --- Загрузка картинок ---
 
 const bgImage = new Image();
@@ -455,7 +485,6 @@ function loop(timestamp) {
 
   drawBackground();
   drawBoardHighlight();
-  drawPlatformsDebug();
   drawHero();
   drawGameOverOverlayCanvas();
 

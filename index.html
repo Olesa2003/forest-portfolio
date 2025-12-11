@@ -1,53 +1,73 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <title>Timur / Hiki — Game Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="game-wrapper">
-    <canvas id="game"></canvas>
-
+  <div class="page">
     <!-- Панель задания -->
-    <div class="ui-panel ui-panel-top-left">
-      <div class="panel-title">Задание</div>
-      <p id="taskText">
-        Доберись по платформам до доски объявлений и коснись её.
-      </p>
-    </div>
-
-    <!-- Подсказка управления -->
-    <div class="ui-panel ui-panel-bottom-left">
-      <p id="controlsHint">
-        Управление: A/D или ←/→ — ходьба · W/↑/Space — прыжок · R — перезапуск
-      </p>
-    </div>
-
-    <!-- Экран Game Over -->
-    <div id="gameOverOverlay" class="overlay hidden">
-      <div class="overlay-window">
-        <h2>Game Over</h2>
-        <p id="gameOverText">Ты сорвался вниз.</p>
-        <button id="gameOverRestart">Попробовать ещё раз (R)</button>
+    <div class="hud-panel hud-top-left">
+      <div class="hud-title">Задание</div>
+      <div id="taskText" class="hud-text">
+        Доберись по платформам до доски объявлений в правой верхней части и коснись её.
       </div>
     </div>
 
-    <!-- Окно доски объявлений -->
-    <div id="boardOverlay" class="overlay hidden">
-      <div class="overlay-window">
-        <h2>Доска объявлений</h2>
-        <p class="board-text">
-          Привет! Я Тимур / Hiki. Занимаюсь монтажом, моушн-дизайном и работаю с
-          AI-инструментами. Делаю YouTube-ролики, Reels/Shorts и визуальные истории
-          под ключ: от идеи до финального рендера.
-        </p>
-        <ul class="board-links">
-          <li><a href="https://t.me/+zv4JItiEl1ZlYTAy" target="_blank">Telegram / контакты</a></li>
-          <li><a href="https://www.youtube.com/@mr.hiki1" target="_blank">YouTube: mr.hiki1</a></li>
-        </ul>
-        <button id="boardClose">Закрыть</button>
+    <!-- Панель управления -->
+    <div class="hud-panel hud-bottom-left">
+      <div class="hud-title">Управление</div>
+      <div id="controlsHint" class="hud-text">
+        A/D или ←/→ — ходьба · W/↑/Space — прыжок · R — перезапуск.
       </div>
+    </div>
+
+    <!-- Музыка -->
+    <div class="hud-panel hud-top-right">
+      <div class="hud-title">Музыка</div>
+      <label class="hud-text" for="musicVolume">
+        Громкость:
+        <input id="musicVolume" type="range" min="0" max="1" step="0.01" value="0.35" />
+      </label>
+      <div class="hud-note">Звук включится при первом нажатии клавиши / клике.</div>
+    </div>
+
+    <!-- Игровой холст -->
+    <div class="game-wrapper">
+      <canvas id="game"></canvas>
+    </div>
+  </div>
+
+  <!-- Оверлей Game Over -->
+  <div id="gameOverOverlay" class="overlay hidden">
+    <div class="overlay-window">
+      <h2>Game Over</h2>
+      <p id="gameOverText">Ты упал в пропасть. Попробуй снова!</p>
+      <button id="gameOverRestart">Перезапустить (R)</button>
+    </div>
+  </div>
+
+  <!-- Оверлей с доской объявлений / биографией -->
+  <div id="boardOverlay" class="overlay hidden">
+    <div class="overlay-window">
+      <h2>Тимур / Hiki — кто я?</h2>
+      <p>
+        Я занимаюсь монтажом, моушн-дизайном и экспериментами с AI.
+        Был айтишником в колледже, работал на линии B2B и почти два года
+        в Яндексе в адаптации — там научился объяснять сложное простым языком
+        и выстраивать процессы.
+      </p>
+      <p>
+        Сейчас собираю проекты: YouTube-ролики, Reels, крипто-каналы, игровые штуки
+        и визуальные миры вроде этой мини-игры.
+      </p>
+      <ul class="links">
+        <li><a href="https://t.me/+zv4JItiEl1ZlYTAy" target="_blank">Telegram / контакты</a></li>
+        <li><a href="https://www.youtube.com/@mr.hiki1" target="_blank">YouTube — mr.hiki1</a></li>
+      </ul>
+      <button id="boardClose">Закрыть</button>
     </div>
   </div>
 

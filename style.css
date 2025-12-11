@@ -2,78 +2,104 @@
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #020617; /* тёмный фон */
-  color: #e5e7eb;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+  padding: 0;
+  height: 100%;
 }
 
-.game-wrapper {
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #020617;
+  color: #e5e7eb;
+}
+
+.page {
   position: relative;
   width: 100vw;
   height: 100vh;
-  max-width: 1536px;
-  max-height: 1024px;
   overflow: hidden;
-  border-radius: 18px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
-  background: #020617;
 }
 
-/* CANVAS на весь контейнер, скейлится браузером */
-#game {
-  width: 100%;
-  height: 100%;
-  display: block;
-  image-rendering: pixelated;
-}
+/* Игровой холст */
 
-/* UI панели */
-
-.ui-panel {
-  position: absolute;
-  z-index: 10;
-  background: rgba(15, 23, 42, 0.9);
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.5);
-  padding: 8px 12px;
-  font-size: 12px;
-  max-width: 260px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(10px);
-}
-
-.ui-panel-top-left {
-  top: 10px;
-  left: 10px;
-}
-
-.ui-panel-bottom-left {
-  bottom: 10px;
-  left: 10px;
-}
-
-.panel-title {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: #e5e7eb;
-}
-
-/* Оверлеи (Game Over, Board) */
-
-.overlay {
+.game-wrapper {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.8);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+}
+
+#game {
+  display: block;
+  image-rendering: pixelated;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* HUD-панели */
+
+.hud-panel {
+  position: absolute;
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  max-width: 320px;
+  z-index: 10;
+  font-size: 13px;
+}
+
+.hud-title {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.hud-text {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.hud-note {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.hud-top-left {
+  top: 12px;
+  left: 12px;
+}
+
+.hud-bottom-left {
+  left: 12px;
+  bottom: 12px;
+}
+
+.hud-top-right {
+  top: 12px;
+  right: 12px;
+}
+
+#musicVolume {
+  vertical-align: middle;
+  margin-left: 4px;
+  width: 130px;
+}
+
+/* Оверлеи */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.86);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   z-index: 50;
 }
 
@@ -84,69 +110,64 @@ body {
 .overlay-window {
   background: #020617;
   border-radius: 16px;
-  padding: 16px 18px;
-  max-width: 420px;
+  padding: 18px 20px;
+  max-width: 480px;
   width: 90%;
   border: 1px solid #38bdf8;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.95);
+  text-align: left;
 }
 
 .overlay-window h2 {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 20px;
 }
 
 .overlay-window p {
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   font-size: 14px;
+  line-height: 1.4;
 }
 
 .overlay-window button {
   border: none;
   border-radius: 999px;
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 7px 16px;
+  font-size: 13px;
   cursor: pointer;
   background: #0ea5e9;
   color: #020617;
+  font-weight: 600;
 }
 
 .overlay-window button:hover {
   background: #38bdf8;
 }
 
-/* Ссылки в доске */
-
-.board-links {
-  list-style: none;
-  margin: 0 0 12px;
-  padding: 0;
+.links {
+  margin: 0 0 10px;
+  padding-left: 18px;
   font-size: 14px;
 }
 
-.board-links li + li {
-  margin-top: 4px;
-}
-
-.board-links a {
+.links a {
   color: #38bdf8;
   text-decoration: none;
 }
 
-.board-links a:hover {
+.links a:hover {
   text-decoration: underline;
 }
 
-/* Адаптив: на маленьких экранах уменьшаем тень/радиусы */
+/* Адаптив */
 
 @media (max-width: 900px) {
-  .game-wrapper {
-    border-radius: 0;
-    box-shadow: none;
+  .hud-panel {
+    max-width: 260px;
+    padding: 8px 10px;
   }
 
-  .ui-panel {
-    font-size: 11px;
-    padding: 6px 8px;
+  #musicVolume {
+    width: 110px;
   }
 }
