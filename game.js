@@ -1,7 +1,9 @@
-// --- Настройки карты и героя ---
+// === РАЗМЕРЫ КАРТЫ / CANVAS ===
+// Под неоновую карту (16:9). Если у тебя PNG 1920×1080 — будет 1:1.
+const MAP_WIDTH = 1920;
+const MAP_HEIGHT = 1080;
 
-const MAP_WIDTH = 1152;
-const MAP_HEIGHT = 768;
+// === CANVASЫ ===
 
 const gameCanvas = document.getElementById("game");
 const ctx = gameCanvas.getContext("2d");
@@ -18,7 +20,8 @@ avatarCtx.imageSmoothingEnabled = false;
 const zoomInput = document.getElementById("minimapZoom");
 let minimapZoom = parseFloat(zoomInput.value);
 
-// Диалоги
+// === ДИАЛОГОВОЕ ОКНО ===
+
 const dialogOverlay = document.getElementById("dialogOverlay");
 const dialogTitle = document.getElementById("dialogTitle");
 const dialogText = document.getElementById("dialogText");
@@ -26,7 +29,7 @@ const dialogLink = document.getElementById("dialogLink");
 const dialogCloseBtn = document.getElementById("dialogClose");
 let dialogOpen = false;
 
-// --- Ачивки и сохранение ---
+// === АЧИВКИ / СОХРАНЕНИЕ ===
 
 const SAVE_KEY = "forestPortfolio_timur_v2";
 const achievementsListEl = document.getElementById("achievementsList");
@@ -85,7 +88,7 @@ function saveGame() {
   localStorage.setItem(SAVE_KEY, JSON.stringify(data));
 }
 
-// --- Спрайты ---
+// === СПРАЙТЫ ===
 
 const mapImg = new Image();
 mapImg.src = "map_forest.png";
@@ -99,41 +102,41 @@ heroLeftImg.src = "hero_left.png";
 const heroRightImg = new Image();
 heroRightImg.src = "hero_right.png";
 
-// Герой
+// === ГЕРОЙ ===
+
 const hero = {
   x: MAP_WIDTH / 2,
-  y: MAP_HEIGHT * 0.7,
+  y: MAP_HEIGHT * 0.6,
   width: 80,
   height: 80,
-  speed: 2.8,
+  speed: 3.0,
   dir: "down",
   moving: false
 };
 
-// фаза шага для лёгкой «анимации»
 let walkPhase = 0;
 
-// --- Проекты / сундуки ---
-// Всё завязано на твой реальный путь
+// === ИНТЕРАКТИВНЫЕ ТОЧКИ (сундуки / костёр / старт / контакты) ===
+// Координаты под новую карту — их можно потом подправить «на глаз».
 
 const projects = [
   {
-    id: "path-story",
-    x: 360,
+    id: "bio",
+    x: 750,   // костёр слева
     y: 620,
-    radius: 45,
-    title: "Путь из офлайна в креатив",
+    radius: 55,
+    title: "Моя история",
     text:
       "Склад, фастфуд, стройка, айтишник в колледже, B2B-линия и почти 2 года в Яндексе в адаптации. " +
-      "Этот этап дал мне дисциплину, умение работать по регламентам и объяснять сложное простым языком.",
-    linkText: "Кратко обо мне (портфолио)",
+      "Этот этап дал дисциплину, умение работать по регламентам и объяснять сложное простым языком.",
+    linkText: "Кратко обо мне (Telegram-портфолио)",
     linkHref: "https://t.me/+zv4JItiEl1ZlYTAy"
   },
   {
     id: "edit-showreel",
-    x: 910,
-    y: 340,
-    radius: 45,
+    x: 1390,   // первый сундук на холме
+    y: 410,
+    radius: 50,
     title: "Монтаж и моушн — основной профиль",
     text:
       "Я видео-монтажёр и моушн-дизайнер: Premiere Pro + After Effects. " +
@@ -144,10 +147,10 @@ const projects = [
   },
   {
     id: "ai-tools",
-    x: 1010,
-    y: 395,
-    radius: 45,
-    title: "AI-инструменты и визуальные эксперименты",
+    x: 1485,   // второй сундук
+    y: 460,
+    radius: 50,
+    title: "AI-инструменты и визуальные миры",
     text:
       "Использую GPT / Gemini для идей и сценариев, Veo / Sora и другие модели для анимаций. " +
       "Генерирую персонажей и сцены, комбинирую нейросети с монтажом и моушном, строю свои визуальные миры.",
@@ -156,34 +159,43 @@ const projects = [
   },
   {
     id: "yt-channel",
-    x: 520,
-    y: 260,
-    radius: 45,
+    x: 960,    // перекрёсток дорожек
+    y: 340,
+    radius: 55,
     title: "Личный YouTube-канал",
     text:
-      "Канал mr.hiki1 — там я играю в игры, монтажом и юмором. " +
-      "Через канал формирую свой стиль.",
+      "Канал mr.hiki1 — игры, монтаж и юмор. " +
+      "Через канал я формирую свой стиль и тестирую форматы.",
     linkText: "Канал mr.hiki1 на YouTube",
     linkHref: "https://www.youtube.com/@mr.hiki1"
   },
   {
     id: "contacts",
-    x: 200,
-    y: 260,
-    radius: 45,
+    x: 960,    // табличка START
+    y: 830,
+    radius: 60,
     title: "Формат работы и контакты",
     text:
       "Открыт к удалённым проектам: монтаж, моушн, креативные интеграции, упаковка каналов. " +
       "Опыт адаптации сотрудников в Яндексе помогает выстраивать процессы и командную работу.",
     linkText: "Связаться (Telegram)",
     linkHref: "https://t.me/+zv4JItiEl1ZlYTAy"
+  },
+  {
+    id: "secret-mushroom",
+    x: 600,    // неоновый гриб слева — запускает мини-игру
+    y: 380,
+    radius: 50,
+    title: "Секретная поляна",
+    text: "Ты нашёл неоновый гриб. Здесь начинается мини-игра.",
+    linkText: "",
+    linkHref: ""
   }
 ];
 
-// какой сундук сейчас подсвечиваем подсказкой "E"
 let activeHintProject = null;
 
-// --- Управление ---
+// === УПРАВЛЕНИЕ ===
 
 const keys = {
   ArrowUp: false,
@@ -217,7 +229,7 @@ window.addEventListener("keyup", (e) => {
   if (e.key in keys) keys[e.key] = false;
 });
 
-// --- Диалоги ---
+// === ДИАЛОГИ ===
 
 function openDialog(project) {
   dialogTitle.textContent = project.title;
@@ -237,12 +249,19 @@ function openDialog(project) {
 
 function closeDialog() {
   dialogOverlay.classList.add("hidden");
+
+  // очищаем мини-игру, если она была добавлена
+  const miniCanvas = document.getElementById("miniGameCanvas");
+  if (miniCanvas && miniCanvas.parentNode) {
+    miniCanvas.parentNode.removeChild(miniCanvas);
+  }
+
   dialogOpen = false;
 }
 
 dialogCloseBtn.addEventListener("click", closeDialog);
 
-// --- Движение героя ---
+// === ДВИЖЕНИЕ ===
 
 function moveHero(dt) {
   let dx = 0;
@@ -254,15 +273,13 @@ function moveHero(dt) {
   if (keys.ArrowRight || keys.d) dx += 1;
 
   hero.moving = dx !== 0 || dy !== 0;
-
   if (!hero.moving) return;
 
-  // Направление под твои спрайты
   if (dx < 0) hero.dir = "left";
   else if (dx > 0) hero.dir = "right";
   else hero.dir = "down";
 
-  // Ачивка «первые шаги»
+  // ачивка за первые шаги
   if (!achievements.firstStep) {
     totalSteps += Math.abs(dx) + Math.abs(dy);
     if (totalSteps > 20) {
@@ -272,7 +289,6 @@ function moveHero(dt) {
     }
   }
 
-  // Нормализация диагонали
   if (dx !== 0 && dy !== 0) {
     const inv = 1 / Math.sqrt(2);
     dx *= inv;
@@ -292,7 +308,7 @@ function moveHero(dt) {
   if (hero.y > MAP_HEIGHT - halfH) hero.y = MAP_HEIGHT - halfH;
 }
 
-// --- Взаимодействие с сундуками ---
+// === ВЗАИМОДЕЙСТВИЕ ===
 
 function dist(x1, y1, x2, y2) {
   const dx = x1 - x2;
@@ -301,27 +317,42 @@ function dist(x1, y1, x2, y2) {
 }
 
 function tryInteract() {
-  const cx = hero.x;
-  const cy = hero.y;
+  // ищем ближайший проект к герою
+  let nearest = null;
+  let best = Infinity;
 
-  for (const proj of projects) {
-    if (dist(cx, cy, proj.x, proj.y) <= proj.radius) {
-      if (!openedProjects.has(proj.id)) {
-        openedProjects.add(proj.id);
-
-        if (!achievements.firstProject) achievements.firstProject = true;
-        if (openedProjects.size === projects.length) achievements.allProjects = true;
-
-        saveGame();
-        refreshAchievementsUI();
-      }
-      openDialog(proj);
-      break;
+  projects.forEach((p) => {
+    const d = dist(hero.x, hero.y, p.x, p.y);
+    if (d < p.radius && d < best) {
+      best = d;
+      nearest = p;
     }
+  });
+
+  if (!nearest) return;
+
+  // секретный гриб → мини-игра
+  if (nearest.id === "secret-mushroom") {
+    launchMiniGame();
+    return;
+  }
+
+  openDialog(nearest);
+
+  // отмечаем ачивки
+  if (!openedProjects.has(nearest.id)) {
+    openedProjects.add(nearest.id);
+    if (!achievements.firstProject) achievements.firstProject = true;
+    if (openedProjects.size >= projects.length - 1) {
+      // минус 1, т.к. гриб — пасхалка, не считаем за проект
+      achievements.allProjects = true;
+    }
+    saveGame();
+    refreshAchievementsUI();
   }
 }
 
-// --- Рисование ---
+// === РИСОВАНИЕ ===
 
 function drawMap() {
   ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT);
@@ -332,10 +363,9 @@ function drawHero() {
   if (hero.dir === "left") img = heroLeftImg;
   else if (hero.dir === "right") img = heroRightImg;
 
-  // лёгкая «анимация шага»: подпрыгивание при движении
   let bobOffset = 0;
   if (hero.moving) {
-    bobOffset = Math.sin(walkPhase) * 3; // 3px вверх-вниз
+    bobOffset = Math.sin(walkPhase) * 3;
   }
 
   const drawX = hero.x - hero.width / 2;
@@ -352,19 +382,21 @@ function drawProjectHalos() {
   let bestDist = Infinity;
 
   projects.forEach((p) => {
-    // мягкий подсвет вокруг сундука
+    // подсветка
     const gradient = ctx.createRadialGradient(p.x, p.y, 5, p.x, p.y, p.radius);
-    gradient.addColorStop(0, "rgba(251,191,36,0.45)");
-    gradient.addColorStop(1, "rgba(251,191,36,0)");
+    const colorCenter = p.id === "secret-mushroom"
+      ? "rgba(56,189,248,0.6)"
+      : "rgba(251,191,36,0.5)";
+    gradient.addColorStop(0, colorCenter);
+    gradient.addColorStop(1, "rgba(0,0,0,0)");
 
     ctx.fillStyle = gradient;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // ищем ближайший к игроку сундук
     const d = dist(hero.x, hero.y, p.x, p.y);
-    if (d < p.radius + 30 && d < bestDist) {
+    if (d < p.radius + 40 && d < bestDist) {
       bestDist = d;
       activeHintProject = p;
     }
@@ -372,10 +404,9 @@ function drawProjectHalos() {
 
   ctx.restore();
 
-  // рисуем подсказку "E" над активным сундуком
-  if (activeHintProject) {
+  if (activeHintProject && activeHintProject.id !== "secret-mushroom") {
     const p = activeHintProject;
-    const hintY = p.y - p.radius - 10;
+    const hintY = p.y - p.radius - 14;
 
     ctx.save();
     ctx.font = "12px system-ui";
@@ -401,7 +432,6 @@ function drawProjectHalos() {
   }
 }
 
-// Аватар в левом верхнем HUD
 function drawAvatar() {
   avatarCtx.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height);
   avatarCtx.drawImage(
@@ -411,7 +441,6 @@ function drawAvatar() {
   );
 }
 
-// Миникарта
 function drawMinimap() {
   const w = minimapCanvas.width;
   const h = minimapCanvas.height;
@@ -423,15 +452,19 @@ function drawMinimap() {
   const offsetX = (w - scaledW) / 2;
   const offsetY = (h - scaledH) / 2;
 
-  minimapCtx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT,
-    offsetX, offsetY, scaledW, scaledH);
+  minimapCtx.drawImage(
+    mapImg,
+    0, 0, MAP_WIDTH, MAP_HEIGHT,
+    offsetX, offsetY, scaledW, scaledH
+  );
 
   const scaleX = scaledW / MAP_WIDTH;
   const scaleY = scaledH / MAP_HEIGHT;
 
-  // Проекты
+  // проекты
   minimapCtx.fillStyle = "#f97316";
   projects.forEach((p) => {
+    if (p.id === "secret-mushroom") return;
     minimapCtx.fillRect(
       offsetX + p.x * scaleX - 2,
       offsetY + p.y * scaleY - 2,
@@ -440,7 +473,7 @@ function drawMinimap() {
     );
   });
 
-  // Герой
+  // герой
   minimapCtx.fillStyle = "#ffffff";
   minimapCtx.fillRect(
     offsetX + hero.x * scaleX - 2,
@@ -450,12 +483,11 @@ function drawMinimap() {
   );
 }
 
-// Хинт внизу экрана, пока не открыт первый сундук
 function drawIntroHint() {
   if (achievements.firstProject) return;
 
   ctx.save();
-  const text = "Подойди к сундуку и нажми E";
+  const text = "Подойди к сундуку или костру и нажми E";
   ctx.font = "14px system-ui";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -467,7 +499,7 @@ function drawIntroHint() {
   const h = 28;
 
   const x = MAP_WIDTH / 2 - w / 2;
-  const y = MAP_HEIGHT - h - 16;
+  const y = MAP_HEIGHT - h - 24;
 
   ctx.globalAlpha = 0.9;
   ctx.fillStyle = "rgba(15,23,42,0.9)";
@@ -483,11 +515,90 @@ function drawIntroHint() {
   ctx.restore();
 }
 
-// --- Игровой цикл ---
+// === МИНИ-ИГРА СО СВЕТЛЯЧКАМИ ===
+
+function launchMiniGame() {
+  const overlay = dialogOverlay;
+  const title = dialogTitle;
+  const text = dialogText;
+  const link = dialogLink;
+
+  link.style.display = "none";
+  title.textContent = "Мини-игра: Поймай светлячков!";
+  text.textContent = "Лови курсором неоновые точки. Нужно поймать 5.";
+
+  overlay.classList.remove("hidden");
+  dialogOpen = true;
+
+  const miniCanvas = document.createElement("canvas");
+  miniCanvas.id = "miniGameCanvas";
+  miniCanvas.width = 400;
+  miniCanvas.height = 260;
+  miniCanvas.style.border = "1px solid #38bdf8";
+  miniCanvas.style.marginTop = "10px";
+  document.querySelector(".dialog-window").appendChild(miniCanvas);
+
+  const mctx = miniCanvas.getContext("2d");
+
+  let caught = 0;
+  const flies = [];
+
+  for (let i = 0; i < 5; i++) {
+    flies.push({
+      x: Math.random() * 300 + 50,
+      y: Math.random() * 200 + 30,
+      speedX: (Math.random() * 2 - 1) * 2,
+      speedY: (Math.random() * 2 - 1) * 2
+    });
+  }
+
+  miniCanvas.addEventListener("click", (e) => {
+    const rect = miniCanvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    flies.forEach((f, i) => {
+      if (Math.hypot(mx - f.x, my - f.y) < 12) {
+        flies.splice(i, 1);
+        caught++;
+      }
+    });
+
+    if (caught >= 5) {
+      text.textContent = "Ты поймал всех! Пасхалка открыта.";
+    }
+  });
+
+  function miniLoop() {
+    mctx.fillStyle = "#020617";
+    mctx.fillRect(0, 0, miniCanvas.width, miniCanvas.height);
+
+    flies.forEach((f) => {
+      f.x += f.speedX;
+      f.y += f.speedY;
+
+      if (f.x < 0 || f.x > miniCanvas.width) f.speedX *= -1;
+      if (f.y < 0 || f.y > miniCanvas.height) f.speedY *= -1;
+
+      mctx.fillStyle = "#38bdf8";
+      mctx.beginPath();
+      mctx.arc(f.x, f.y, 6, 0, Math.PI * 2);
+      mctx.fill();
+    });
+
+    if (flies.length > 0 && dialogOpen) {
+      requestAnimationFrame(miniLoop);
+    }
+  }
+
+  miniLoop();
+}
+
+// === ИГРОВОЙ ЦИКЛ ===
 
 let lastTime = 0;
 
-function loop(timestamp) {
+function gameLoop(timestamp) {
   const dt = timestamp - lastTime;
   lastTime = timestamp;
 
@@ -512,10 +623,10 @@ function loop(timestamp) {
   drawMinimap();
   drawIntroHint();
 
-  requestAnimationFrame(loop);
+  requestAnimationFrame(gameLoop);
 }
 
-// --- Старт ---
+// === СТАРТ ===
 
 zoomInput.addEventListener("input", () => {
   minimapZoom = parseFloat(zoomInput.value);
@@ -531,7 +642,7 @@ let imagesLoaded = 0;
     if (imagesLoaded === 4) {
       gameCanvas.width = MAP_WIDTH;
       gameCanvas.height = MAP_HEIGHT;
-      requestAnimationFrame(loop);
+      requestAnimationFrame(gameLoop);
     }
   });
 });
