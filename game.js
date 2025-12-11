@@ -1,97 +1,49 @@
-// === РАЗМЕРЫ КАРТЫ / CANVAS ===
-// Под неоновую карту (16:9). Если у тебя PNG 1920×1080 — будет 1:1.
-const MAP_WIDTH = 1920;
-const MAP_HEIGHT = 1080;
+// -----------------------------------------------------------
+//  Game Portfolio Platformer
+//  Тимур / Hiki
+// -----------------------------------------------------------
 
-// === CANVASЫ ===
+// --- Константы мира ---
 
-const gameCanvas = document.getElementById("game");
-const ctx = gameCanvas.getContext("2d");
+const WORLD = {
+  width: 1536,  // уточняется после загрузки фоновой карты
+  height: 1024
+};
+
+// Физика (px/сек, px/сек^2)
+const MOVE_SPEED = 220;      // скорость бега
+const JUMP_SPEED = 520;      // сила прыжка
+const GRAVITY = 900;        // гравитация
+const MAX_FALL_SPEED = 1400; // лимит падения
+
+// ниже этого считаем, что герой "упал в пропасть"
+let FALL_Y_LIMIT = WORLD.height + 300;
+
+// Включить/выключить отрисовку хитбоксов платформ
+const DEBUG_PLATFORMS = true;
+
+// --- Канвас и контекст ---
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
-const minimapCanvas = document.getElementById("minimap");
-const minimapCtx = minimapCanvas.getContext("2d");
-minimapCtx.imageSmoothingEnabled = false;
+// --- UI элементы ---
 
-const avatarCanvas = document.getElementById("avatar");
-const avatarCtx = avatarCanvas.getContext("2d");
-avatarCtx.imageSmoothingEnabled = false;
+const taskTextEl = document.getElementById("taskText");
+const controlsHintEl = document.getElementById("controlsHint");
 
-const zoomInput = document.getElementById("minimapZoom");
-let minimapZoom = parseFloat(zoomInput.value);
+const gameOverOverlay = document.getElementById("gameOverOverlay");
+const gameOverTextEl = document.getElementById("gameOverText");
+const gameOverRestartBtn = document.getElementById("gameOverRestart");
 
-// === ДИАЛОГОВОЕ ОКНО ===
+const boardOverlay = document.getElementById("boardOverlay");
+const boardCloseBtn = document.getElementById("boardClose");
 
-const dialogOverlay = document.getElementById("dialogOverlay");
-const dialogTitle = document.getElementById("dialogTitle");
-const dialogText = document.getElementById("dialogText");
-const dialogLink = document.getElementById("dialogLink");
-const dialogCloseBtn = document.getElementById("dialogClose");
-let dialogOpen = false;
+// --- Загрузка картинок ---
 
-// === АЧИВКИ / СОХРАНЕНИЕ ===
-
-const SAVE_KEY = "forestPortfolio_timur_v2";
-const achievementsListEl = document.getElementById("achievementsList");
-
-let achievements = {
-  firstStep: false,
-  firstProject: false,
-  allProjects: false
-};
-
-const ACHIEVE_TEXT = {
-  firstStep: "Сделать первые шаги по лесу",
-  firstProject: "Открыть первый сундук с проектом",
-  allProjects: "Открыть все сундуки с проектами"
-};
-
-let openedProjects = new Set();
-let totalSteps = 0;
-
-function refreshAchievementsUI() {
-  achievementsListEl.innerHTML = "";
-  Object.entries(ACHIEVE_TEXT).forEach(([key, label]) => {
-    const li = document.createElement("li");
-    if (achievements[key]) li.classList.add("completed");
-    const badge = document.createElement("span");
-    badge.className = "badge";
-    const text = document.createElement("span");
-    text.textContent = label;
-    li.appendChild(badge);
-    li.appendChild(text);
-    achievementsListEl.appendChild(li);
-  });
-}
-
-function loadSave() {
-  const raw = localStorage.getItem(SAVE_KEY);
-  if (!raw) return;
-  try {
-    const data = JSON.parse(raw);
-    if (data.achievements) {
-      achievements = Object.assign(achievements, data.achievements);
-    }
-    if (Array.isArray(data.openedProjects)) {
-      openedProjects = new Set(data.openedProjects);
-    }
-  } catch (e) {
-    console.warn("save parse error", e);
-  }
-}
-
-function saveGame() {
-  const data = {
-    achievements,
-    openedProjects: Array.from(openedProjects)
-  };
-  localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-}
-
-// === СПРАЙТЫ ===
-
-const mapImg = new Image();
-mapImg.src = "map_forest.png";
+const bgImage = new Image();
+bgImage.src = "map_forest.png";
 
 const heroFrontImg = new Image();
 heroFrontImg.src = "hero_front.png";
@@ -102,547 +54,417 @@ heroLeftImg.src = "hero_left.png";
 const heroRightImg = new Image();
 heroRightImg.src = "hero_right.png";
 
-// === ГЕРОЙ ===
+const heroBackImg = new Image();
+heroBackImg.src = "idle_up.png";
 
-const hero = {
-  x: MAP_WIDTH / 2,
-  y: MAP_HEIGHT * 0.6,
-  width: 80,
-  height: 80,
-  speed: 3.0,
-  dir: "down",
-  moving: false
-};
+// --- Платформы и триггеры ---------------------------------
+// Координаты подобраны под фон 1536x1024 (как на скрине)
 
-let walkPhase = 0;
+const platforms = [
+  // запасная "земля" далеко внизу — на всякий случай
+  { x: 0, y: 3000, w: 1536, h: 124 },
 
-// === ИНТЕРАКТИВНЫЕ ТОЧКИ (сундуки / костёр / старт / контакты) ===
-// Координаты под новую карту — их можно потом подправить «на глаз».
+  // нижняя большая платформа слева
+  { x: 80,  y: 830, w: 540, h: 40 },
 
-const projects = [
-  {
-    id: "bio",
-    x: 750,   // костёр слева
-    y: 620,
-    radius: 55,
-    title: "Моя история",
-    text:
-      "Склад, фастфуд, стройка, айтишник в колледже, B2B-линия и почти 2 года в Яндексе в адаптации. " +
-      "Этот этап дал дисциплину, умение работать по регламентам и объяснять сложное простым языком.",
-    linkText: "Кратко обо мне (Telegram-портфолио)",
-    linkHref: "https://t.me/+zv4JItiEl1ZlYTAy"
-  },
-  {
-    id: "edit-showreel",
-    x: 1390,   // первый сундук на холме
-    y: 410,
-    radius: 50,
-    title: "Монтаж и моушн — основной профиль",
-    text:
-      "Я видео-монтажёр и моушн-дизайнер: Premiere Pro + After Effects. " +
-      "Делаю Reels / Shorts / YouTube для крипто-каналов, блогеров и образовательных проектов. " +
-      "Работаю по ТЗ, соблюдаю дедлайны и слежу за ритмом, звуком и деталями.",
-    linkText: "Портфолио монтажёра (Telegram)",
-    linkHref: "https://t.me/+zv4JItiEl1ZlYTAy"
-  },
-  {
-    id: "ai-tools",
-    x: 1485,   // второй сундук
-    y: 460,
-    radius: 50,
-    title: "AI-инструменты и визуальные миры",
-    text:
-      "Использую GPT / Gemini для идей и сценариев, Veo / Sora и другие модели для анимаций. " +
-      "Генерирую персонажей и сцены, комбинирую нейросети с монтажом и моушном, строю свои визуальные миры.",
-    linkText: "Примеры AI-работ (портфолио)",
-    linkHref: "https://t.me/+zv4JItiEl1ZlYTAy"
-  },
-  {
-    id: "yt-channel",
-    x: 960,    // перекрёсток дорожек
-    y: 340,
-    radius: 55,
-    title: "Личный YouTube-канал",
-    text:
-      "Канал mr.hiki1 — игры, монтаж и юмор. " +
-      "Через канал я формирую свой стиль и тестирую форматы.",
-    linkText: "Канал mr.hiki1 на YouTube",
-    linkHref: "https://www.youtube.com/@mr.hiki1"
-  },
-  {
-    id: "contacts",
-    x: 960,    // табличка START
-    y: 830,
-    radius: 60,
-    title: "Формат работы и контакты",
-    text:
-      "Открыт к удалённым проектам: монтаж, моушн, креативные интеграции, упаковка каналов. " +
-      "Опыт адаптации сотрудников в Яндексе помогает выстраивать процессы и командную работу.",
-    linkText: "Связаться (Telegram)",
-    linkHref: "https://t.me/+zv4JItiEl1ZlYTAy"
-  },
-  {
-    id: "secret-mushroom",
-    x: 600,    // неоновый гриб слева — запускает мини-игру
-    y: 380,
-    radius: 50,
-    title: "Секретная поляна",
-    text: "Ты нашёл неоновый гриб. Здесь начинается мини-игра.",
-    linkText: "",
-    linkHref: ""
-  }
+  // ступеньки вверх вправо
+  { x: 470, y: 700, w: 260, h: 40 },
+  { x: 680, y: 610, w: 160, h: 40 },
+  { x: 820, y: 540, w: 260, h: 40 },
+
+  // финальная платформа под доской
+  { x: 1020, y: 400, w: 300, h: 40 }
 ];
 
-let activeHintProject = null;
-
-// === УПРАВЛЕНИЕ ===
-
-const keys = {
-  ArrowUp: false,
-  ArrowDown: false,
-  ArrowLeft: false,
-  ArrowRight: false,
-  w: false,
-  a: false,
-  s: false,
-  d: false,
-  e: false,
-  Enter: false
+// Прямоугольник, где стоит доска объявлений
+const boardTrigger = {
+  x: 1060,
+  y: 260,
+  w: 320,
+  h: 220
 };
 
-window.addEventListener("keydown", (e) => {
-  if (dialogOpen) {
-    if (["Escape", " ", "Enter"].includes(e.key)) {
-      closeDialog();
-      e.preventDefault();
-    }
-    return;
-  }
+// --- Состояние героя --------------------------------------
+// Ставим героя СРАЗУ на первую реальную платформу (index = 1)
 
-  if (e.key in keys) {
-    keys[e.key] = true;
-    if (e.key.startsWith("Arrow")) e.preventDefault();
+const HERO_WIDTH = 72;
+const HERO_HEIGHT = 96;
+
+const hero = {
+  x: platforms[1].x + 40,
+  y: platforms[1].y - HERO_HEIGHT,
+  width: HERO_WIDTH,
+  height: HERO_HEIGHT,
+  vx: 0,
+  vy: 0,
+  onGround: false,
+  dir: "right", // "left" | "right"
+  animTime: 0
+};
+
+// --- Ввод с клавиатуры ------------------------------------
+
+const keys = {
+  left: false,
+  right: false,
+  jump: false,
+  jumpPressedThisFrame: false,
+  restart: false
+};
+
+window.addEventListener("keydown", e => {
+  switch (e.key) {
+    case "a":
+    case "A":
+    case "ArrowLeft":
+      keys.left = true;
+      break;
+    case "d":
+    case "D":
+    case "ArrowRight":
+      keys.right = true;
+      break;
+    case "w":
+    case "W":
+    case "ArrowUp":
+    case " ":
+      keys.jump = true;
+      keys.jumpPressedThisFrame = true;
+      break;
+    case "r":
+    case "R":
+      keys.restart = true;
+      break;
   }
 });
 
-window.addEventListener("keyup", (e) => {
-  if (e.key in keys) keys[e.key] = false;
+window.addEventListener("keyup", e => {
+  switch (e.key) {
+    case "a":
+    case "A":
+    case "ArrowLeft":
+      keys.left = false;
+      break;
+    case "d":
+    case "D":
+    case "ArrowRight":
+      keys.right = false;
+      break;
+    case "w":
+    case "W":
+    case "ArrowUp":
+    case " ":
+      keys.jump = false;
+      break;
+    case "r":
+    case "R":
+      keys.restart = false;
+      break;
+  }
 });
 
-// === ДИАЛОГИ ===
+// --- Game Over / Restart ----------------------------------
 
-function openDialog(project) {
-  dialogTitle.textContent = project.title;
-  dialogText.textContent = project.text;
+let isGameOver = false;
 
-  if (project.linkHref && project.linkText) {
-    dialogLink.textContent = project.linkText;
-    dialogLink.href = project.linkHref;
-    dialogLink.style.display = "inline-block";
-  } else {
-    dialogLink.style.display = "none";
-  }
-
-  dialogOverlay.classList.remove("hidden");
-  dialogOpen = true;
+function showGameOver(reasonText) {
+  isGameOver = true;
+  gameOverTextEl.textContent =
+    reasonText || "Ты сорвался вниз. Попробуй ещё раз!";
+  gameOverOverlay.classList.remove("hidden");
 }
 
-function closeDialog() {
-  dialogOverlay.classList.add("hidden");
-
-  // очищаем мини-игру, если она была добавлена
-  const miniCanvas = document.getElementById("miniGameCanvas");
-  if (miniCanvas && miniCanvas.parentNode) {
-    miniCanvas.parentNode.removeChild(miniCanvas);
-  }
-
-  dialogOpen = false;
+function hideGameOver() {
+  isGameOver = false;
+  gameOverOverlay.classList.add("hidden");
 }
 
-dialogCloseBtn.addEventListener("click", closeDialog);
+function resetHero() {
+  hero.x = platforms[1].x + 40;
+  hero.y = platforms[1].y - hero.height;
+  hero.vx = 0;
+  hero.vy = 0;
+  hero.onGround = false;
+  hero.dir = "right";
+  hero.animTime = 0;
+}
 
-// === ДВИЖЕНИЕ ===
+gameOverRestartBtn.addEventListener("click", () => {
+  hideGameOver();
+  resetHero();
+});
 
-function moveHero(dt) {
-  let dx = 0;
-  let dy = 0;
+// --- Работа с доской объявлений ---------------------------
 
-  if (keys.ArrowUp || keys.w) dy -= 1;
-  if (keys.ArrowDown || keys.s) dy += 1;
-  if (keys.ArrowLeft || keys.a) dx -= 1;
-  if (keys.ArrowRight || keys.d) dx += 1;
+let boardOpenedOnce = false;
 
-  hero.moving = dx !== 0 || dy !== 0;
-  if (!hero.moving) return;
+function isHeroInBoardZone() {
+  const cx = hero.x + hero.width / 2;
+  const cy = hero.y + hero.height / 2;
+  return (
+    cx > boardTrigger.x &&
+    cx < boardTrigger.x + boardTrigger.w &&
+    cy > boardTrigger.y &&
+    cy < boardTrigger.y + boardTrigger.h
+  );
+}
 
-  if (dx < 0) hero.dir = "left";
-  else if (dx > 0) hero.dir = "right";
-  else hero.dir = "down";
+function openBoard() {
+  if (boardOpenedOnce) return;
+  boardOpenedOnce = true;
+  boardOverlay.classList.remove("hidden");
+}
 
-  // ачивка за первые шаги
-  if (!achievements.firstStep) {
-    totalSteps += Math.abs(dx) + Math.abs(dy);
-    if (totalSteps > 20) {
-      achievements.firstStep = true;
-      saveGame();
-      refreshAchievementsUI();
+function closeBoard() {
+  boardOverlay.classList.add("hidden");
+}
+
+boardCloseBtn.addEventListener("click", closeBoard);
+
+// --- Вспомогательные функции ------------------------------
+
+function rectsOverlap(a, b) {
+  return (
+    a.x < b.x + b.w &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.height > b.y
+  );
+}
+
+// --- Обновление физики героя ------------------------------
+
+function updateHero(dt) {
+  // предыдущее положение для корректной коллизии
+  const prevX = hero.x;
+  const prevY = hero.y;
+  const prevBottom = prevY + hero.height;
+  const prevTop = prevY;
+
+  // Горизонталь
+  let dir = 0;
+  if (keys.left) dir -= 1;
+  if (keys.right) dir += 1;
+
+  hero.vx = dir * MOVE_SPEED;
+
+  if (dir < 0) hero.dir = "left";
+  else if (dir > 0) hero.dir = "right";
+
+  // Прыжок
+  if (keys.jumpPressedThisFrame && hero.onGround) {
+    hero.vy = -JUMP_SPEED;
+    hero.onGround = false;
+  }
+  keys.jumpPressedThisFrame = false;
+
+  // Гравитация
+  hero.vy += GRAVITY * dt;
+  if (hero.vy > MAX_FALL_SPEED) hero.vy = MAX_FALL_SPEED;
+
+  // Перемещение
+  hero.x += hero.vx * dt;
+  hero.y += hero.vy * dt;
+  hero.onGround = false;
+
+  // Стенки мира по X
+  if (hero.x < 0) hero.x = 0;
+  if (hero.x + hero.width > WORLD.width) {
+    hero.x = WORLD.width - hero.width;
+  }
+
+  // Коллизии с платформами (нормальный вариант: по пересечению пред/текущего)
+  const curBottom = hero.y + hero.height;
+  const curTop = hero.y;
+  const curLeft = hero.x;
+  const curRight = hero.x + hero.width;
+
+  for (const p of platforms) {
+    if (!rectsOverlap(hero, p)) continue;
+
+    const platTop = p.y;
+    const platBottom = p.y + p.h;
+    const platLeft = p.x;
+    const platRight = p.x + p.w;
+
+    // Приземление сверху
+    if (prevBottom <= platTop && curBottom >= platTop) {
+      hero.y = platTop - hero.height;
+      hero.vy = 0;
+      hero.onGround = true;
+    }
+    // Удар головой снизу
+    else if (prevTop >= platBottom && curTop <= platBottom) {
+      hero.y = platBottom;
+      hero.vy = 0;
+    }
+    // Горизонтальные толчки (если не было вертикального пересечения)
+    else {
+      if (prevX + hero.width <= platLeft && curRight > platLeft) {
+        // вошёл справа налево
+        hero.x = platLeft - hero.width;
+      } else if (prevX >= platRight && curLeft < platRight) {
+        // вошёл слева направо
+        hero.x = platRight;
+      }
     }
   }
 
-  if (dx !== 0 && dy !== 0) {
-    const inv = 1 / Math.sqrt(2);
-    dx *= inv;
-    dy *= inv;
+  // Верх мира
+  if (hero.y < 0) {
+    hero.y = 0;
+    if (hero.vy < 0) hero.vy = 0;
   }
 
-  const dist = hero.speed * (dt / 16.67);
-  hero.x += dx * dist;
-  hero.y += dy * dist;
+  // Проверка на падение в пропасть
+  if (hero.y > FALL_Y_LIMIT && !isGameOver) {
+    showGameOver("Ты упал в пропасть. Попробуй снова!");
+  }
 
-  const halfW = hero.width / 2;
-  const halfH = hero.height / 2;
-
-  if (hero.x < halfW) hero.x = halfW;
-  if (hero.x > MAP_WIDTH - halfW) hero.x = MAP_WIDTH - halfW;
-  if (hero.y < halfH) hero.y = halfH;
-  if (hero.y > MAP_HEIGHT - halfH) hero.y = MAP_HEIGHT - halfH;
+  hero.animTime += dt;
 }
 
-// === ВЗАИМОДЕЙСТВИЕ ===
+// --- Рендеринг --------------------------------------------
 
-function dist(x1, y1, x2, y2) {
-  const dx = x1 - x2;
-  const dy = y1 - y2;
-  return Math.sqrt(dx * dx + dy * dy);
+function drawBackground() {
+  ctx.drawImage(bgImage, 0, 0, WORLD.width, WORLD.height);
 }
 
-function tryInteract() {
-  // ищем ближайший проект к герою
-  let nearest = null;
-  let best = Infinity;
+function drawPlatformsDebug() {
+  if (!DEBUG_PLATFORMS) return;
 
-  projects.forEach((p) => {
-    const d = dist(hero.x, hero.y, p.x, p.y);
-    if (d < p.radius && d < best) {
-      best = d;
-      nearest = p;
-    }
+  platforms.forEach(p => {
+    ctx.fillStyle = "rgba(0, 150, 255, 0.35)";
+    ctx.fillRect(p.x, p.y, p.w, p.h);
+
+    ctx.strokeStyle = "rgba(0, 255, 255, 0.9)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(p.x, p.y, p.w, p.h);
+
+    ctx.fillStyle = "white";
+    ctx.font = "12px monospace";
+    ctx.fillText(`(${p.x}, ${p.y})`, p.x + 4, p.y - 6);
   });
-
-  if (!nearest) return;
-
-  // секретный гриб → мини-игра
-  if (nearest.id === "secret-mushroom") {
-    launchMiniGame();
-    return;
-  }
-
-  openDialog(nearest);
-
-  // отмечаем ачивки
-  if (!openedProjects.has(nearest.id)) {
-    openedProjects.add(nearest.id);
-    if (!achievements.firstProject) achievements.firstProject = true;
-    if (openedProjects.size >= projects.length - 1) {
-      // минус 1, т.к. гриб — пасхалка, не считаем за проект
-      achievements.allProjects = true;
-    }
-    saveGame();
-    refreshAchievementsUI();
-  }
 }
 
-// === РИСОВАНИЕ ===
+function drawBoardHighlight() {
+  ctx.save();
+  const cx = boardTrigger.x + boardTrigger.w / 2;
+  const cy = boardTrigger.y + boardTrigger.h / 2;
 
-function drawMap() {
-  ctx.drawImage(mapImg, 0, 0, MAP_WIDTH, MAP_HEIGHT);
+  const gradient = ctx.createRadialGradient(
+    cx, cy, 10,
+    cx, cy, 220
+  );
+  gradient.addColorStop(0, "rgba(56,189,248,0.25)");
+  gradient.addColorStop(1, "rgba(56,189,248,0)");
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(
+    boardTrigger.x - 120,
+    boardTrigger.y - 120,
+    boardTrigger.w + 240,
+    boardTrigger.h + 240
+  );
+  ctx.restore();
 }
 
 function drawHero() {
-  let img = heroFrontImg;
-  if (hero.dir === "left") img = heroLeftImg;
-  else if (hero.dir === "right") img = heroRightImg;
+  let sprite;
 
-  let bobOffset = 0;
-  if (hero.moving) {
-    bobOffset = Math.sin(walkPhase) * 3;
+  const movingHorizontally = Math.abs(hero.vx) > 1;
+
+  if (!movingHorizontally && hero.onGround) {
+    sprite = heroFrontImg;
+  } else {
+    sprite = hero.dir === "left" ? heroLeftImg : heroRightImg;
   }
 
-  const drawX = hero.x - hero.width / 2;
-  const drawY = hero.y - hero.height / 2 + bobOffset;
+  const drawX = Math.round(hero.x);
+  const drawY = Math.round(hero.y);
 
-  ctx.drawImage(img, drawX, drawY, hero.width, hero.height);
+  ctx.drawImage(sprite, drawX, drawY, hero.width, hero.height);
 }
 
-function drawProjectHalos() {
-  ctx.save();
-  ctx.globalAlpha = 0.8;
-
-  activeHintProject = null;
-  let bestDist = Infinity;
-
-  projects.forEach((p) => {
-    // подсветка
-    const gradient = ctx.createRadialGradient(p.x, p.y, 5, p.x, p.y, p.radius);
-    const colorCenter = p.id === "secret-mushroom"
-      ? "rgba(56,189,248,0.6)"
-      : "rgba(251,191,36,0.5)";
-    gradient.addColorStop(0, colorCenter);
-    gradient.addColorStop(1, "rgba(0,0,0,0)");
-
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    const d = dist(hero.x, hero.y, p.x, p.y);
-    if (d < p.radius + 40 && d < bestDist) {
-      bestDist = d;
-      activeHintProject = p;
-    }
-  });
-
-  ctx.restore();
-
-  if (activeHintProject && activeHintProject.id !== "secret-mushroom") {
-    const p = activeHintProject;
-    const hintY = p.y - p.radius - 14;
-
-    ctx.save();
-    ctx.font = "12px system-ui";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    const text = "E";
-    const metrics = ctx.measureText(text);
-    const w = metrics.width + 10;
-    const h = 18;
-
-    ctx.fillStyle = "rgba(15,23,42,0.95)";
-    ctx.strokeStyle = "#fbbf24";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(p.x - w / 2, hintY - h / 2, w, h, 6);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = "#fbbf24";
-    ctx.fillText(text, p.x, hintY);
-    ctx.restore();
-  }
-}
-
-function drawAvatar() {
-  avatarCtx.clearRect(0, 0, avatarCanvas.width, avatarCanvas.height);
-  avatarCtx.drawImage(
-    heroFrontImg,
-    0, 0, heroFrontImg.width, heroFrontImg.height,
-    0, 0, avatarCanvas.width, avatarCanvas.height
-  );
-}
-
-function drawMinimap() {
-  const w = minimapCanvas.width;
-  const h = minimapCanvas.height;
-
-  minimapCtx.clearRect(0, 0, w, h);
-
-  const scaledW = w * minimapZoom;
-  const scaledH = h * minimapZoom;
-  const offsetX = (w - scaledW) / 2;
-  const offsetY = (h - scaledH) / 2;
-
-  minimapCtx.drawImage(
-    mapImg,
-    0, 0, MAP_WIDTH, MAP_HEIGHT,
-    offsetX, offsetY, scaledW, scaledH
-  );
-
-  const scaleX = scaledW / MAP_WIDTH;
-  const scaleY = scaledH / MAP_HEIGHT;
-
-  // проекты
-  minimapCtx.fillStyle = "#f97316";
-  projects.forEach((p) => {
-    if (p.id === "secret-mushroom") return;
-    minimapCtx.fillRect(
-      offsetX + p.x * scaleX - 2,
-      offsetY + p.y * scaleY - 2,
-      4,
-      4
-    );
-  });
-
-  // герой
-  minimapCtx.fillStyle = "#ffffff";
-  minimapCtx.fillRect(
-    offsetX + hero.x * scaleX - 2,
-    offsetY + hero.y * scaleY - 2,
-    4,
-    4
-  );
-}
-
-function drawIntroHint() {
-  if (achievements.firstProject) return;
+function drawGameOverOverlayCanvas() {
+  if (!isGameOver) return;
 
   ctx.save();
-  const text = "Подойди к сундуку или костру и нажми E";
-  ctx.font = "14px system-ui";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  const paddingX = 16;
-  const paddingY = 6;
-  const metrics = ctx.measureText(text);
-  const w = metrics.width + paddingX * 2;
-  const h = 28;
-
-  const x = MAP_WIDTH / 2 - w / 2;
-  const y = MAP_HEIGHT - h - 24;
-
-  ctx.globalAlpha = 0.9;
-  ctx.fillStyle = "rgba(15,23,42,0.9)";
-  ctx.strokeStyle = "#38bdf8";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, 10);
-  ctx.fill();
-  ctx.stroke();
+  ctx.fillStyle = "rgba(0,0,0,0.6)";
+  ctx.fillRect(0, 0, WORLD.width, WORLD.height);
 
   ctx.fillStyle = "#e5e7eb";
-  ctx.fillText(text, MAP_WIDTH / 2, y + h / 2 + 1);
+  ctx.font = "32px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText("Game Over", WORLD.width / 2, WORLD.height / 2 - 20);
+
+  ctx.font = "18px system-ui";
+  ctx.fillText(
+    "Нажми R, чтобы попробовать ещё раз",
+    WORLD.width / 2,
+    WORLD.height / 2 + 20
+  );
   ctx.restore();
 }
 
-// === МИНИ-ИГРА СО СВЕТЛЯЧКАМИ ===
-
-function launchMiniGame() {
-  const overlay = dialogOverlay;
-  const title = dialogTitle;
-  const text = dialogText;
-  const link = dialogLink;
-
-  link.style.display = "none";
-  title.textContent = "Мини-игра: Поймай светлячков!";
-  text.textContent = "Лови курсором неоновые точки. Нужно поймать 5.";
-
-  overlay.classList.remove("hidden");
-  dialogOpen = true;
-
-  const miniCanvas = document.createElement("canvas");
-  miniCanvas.id = "miniGameCanvas";
-  miniCanvas.width = 400;
-  miniCanvas.height = 260;
-  miniCanvas.style.border = "1px solid #38bdf8";
-  miniCanvas.style.marginTop = "10px";
-  document.querySelector(".dialog-window").appendChild(miniCanvas);
-
-  const mctx = miniCanvas.getContext("2d");
-
-  let caught = 0;
-  const flies = [];
-
-  for (let i = 0; i < 5; i++) {
-    flies.push({
-      x: Math.random() * 300 + 50,
-      y: Math.random() * 200 + 30,
-      speedX: (Math.random() * 2 - 1) * 2,
-      speedY: (Math.random() * 2 - 1) * 2
-    });
-  }
-
-  miniCanvas.addEventListener("click", (e) => {
-    const rect = miniCanvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-
-    flies.forEach((f, i) => {
-      if (Math.hypot(mx - f.x, my - f.y) < 12) {
-        flies.splice(i, 1);
-        caught++;
-      }
-    });
-
-    if (caught >= 5) {
-      text.textContent = "Ты поймал всех! Пасхалка открыта.";
-    }
-  });
-
-  function miniLoop() {
-    mctx.fillStyle = "#020617";
-    mctx.fillRect(0, 0, miniCanvas.width, miniCanvas.height);
-
-    flies.forEach((f) => {
-      f.x += f.speedX;
-      f.y += f.speedY;
-
-      if (f.x < 0 || f.x > miniCanvas.width) f.speedX *= -1;
-      if (f.y < 0 || f.y > miniCanvas.height) f.speedY *= -1;
-
-      mctx.fillStyle = "#38bdf8";
-      mctx.beginPath();
-      mctx.arc(f.x, f.y, 6, 0, Math.PI * 2);
-      mctx.fill();
-    });
-
-    if (flies.length > 0 && dialogOpen) {
-      requestAnimationFrame(miniLoop);
-    }
-  }
-
-  miniLoop();
-}
-
-// === ИГРОВОЙ ЦИКЛ ===
+// --- Главный цикл -----------------------------------------
 
 let lastTime = 0;
+let assetsLoaded = 0;
+const TOTAL_ASSETS = 5; // фон + 4 спрайта героя
 
-function gameLoop(timestamp) {
-  const dt = timestamp - lastTime;
-  lastTime = timestamp;
+function tryStartGame() {
+  assetsLoaded++;
+  if (assetsLoaded < TOTAL_ASSETS) return;
 
-  moveHero(dt);
+  WORLD.width = bgImage.width;
+  WORLD.height = bgImage.height;
+  canvas.width = WORLD.width;
+  canvas.height = WORLD.height;
 
-  if (hero.moving) {
-    walkPhase += dt * 0.02;
-  } else {
-    walkPhase = 0;
-  }
+  FALL_Y_LIMIT = WORLD.height + 200;
 
-  if ((keys.e || keys.Enter) && !dialogOpen) {
-    tryInteract();
-    keys.e = false;
-    keys.Enter = false;
-  }
-
-  drawMap();
-  drawProjectHalos();
-  drawHero();
-  drawAvatar();
-  drawMinimap();
-  drawIntroHint();
-
-  requestAnimationFrame(gameLoop);
+  resetHero();
+  requestAnimationFrame(loop);
 }
 
-// === СТАРТ ===
+bgImage.onload = tryStartGame;
+heroFrontImg.onload = tryStartGame;
+heroLeftImg.onload = tryStartGame;
+heroRightImg.onload = tryStartGame;
+heroBackImg.onload = tryStartGame;
 
-zoomInput.addEventListener("input", () => {
-  minimapZoom = parseFloat(zoomInput.value);
-});
+function loop(timestamp) {
+  const dt = (timestamp - lastTime) / 1000 || 0;
+  lastTime = timestamp;
 
-loadSave();
-refreshAchievementsUI();
+  if (keys.restart && isGameOver) {
+    hideGameOver();
+    resetHero();
+  }
 
-let imagesLoaded = 0;
-[mapImg, heroFrontImg, heroLeftImg, heroRightImg].forEach((img) => {
-  img.addEventListener("load", () => {
-    imagesLoaded++;
-    if (imagesLoaded === 4) {
-      gameCanvas.width = MAP_WIDTH;
-      gameCanvas.height = MAP_HEIGHT;
-      requestAnimationFrame(gameLoop);
+  if (!isGameOver) {
+    updateHero(dt);
+
+    if (isHeroInBoardZone()) {
+      openBoard();
+      taskTextEl.textContent =
+        "Задание выполнено: ты добрался до доски объявлений!";
     }
-  });
-});
+  }
+
+  drawBackground();
+  drawBoardHighlight();
+  drawPlatformsDebug();
+  drawHero();
+  drawGameOverOverlayCanvas();
+
+  requestAnimationFrame(loop);
+}
+
+// --- Инициализация текста ---------------------------------
+
+taskTextEl.textContent =
+  "Доберись по платформам до доски объявлений в правой верхней части и коснись её.";
+controlsHintEl.textContent =
+  "Управление: A/D или ←/→ — ходьба · W/↑/Space — прыжок · R — перезапуск.";

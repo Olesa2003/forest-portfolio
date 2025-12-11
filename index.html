@@ -1,71 +1,53 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Neon Forest Portfolio — Hiki</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Timur / Hiki — Game Portfolio</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
   <div class="game-wrapper">
-    <canvas id="game" width="1920" height="1080"></canvas>
+    <canvas id="game"></canvas>
 
-    <!-- ⭐ Миникарта (правый нижний угол) -->
-    <div class="hud hud-bottom-right">
-      <div class="card minimap-card">
-        <div class="minimap-header">
-          <span>Карта</span>
-          <label class="zoom-label">
-            Зум
-            <input id="minimapZoom" type="range" min="0.5" max="1" step="0.25" value="0.75" />
-          </label>
-        </div>
-        <canvas id="minimap" width="200" height="200"></canvas>
-        <div class="legend">
-          <div><span class="legend-color hero"></span>Ты</div>
-          <div><span class="legend-color chest"></span>Проекты</div>
-        </div>
-      </div>
+    <!-- Панель задания -->
+    <div class="ui-panel ui-panel-top-left">
+      <div class="panel-title">Задание</div>
+      <p id="taskText">
+        Доберись по платформам до доски объявлений и коснись её.
+      </p>
+    </div>
 
-      <!-- ⭐ Имя и роль -->
-      <div class="card dev-card small-card">
-        <div class="dev-header">
-          <canvas id="avatar" width="48" height="48"></canvas>
-          <div>
-            <div class="dev-name">Timur / Hiki</div>
-            <div class="dev-role">Video · Motion · AI</div>
-          </div>
-        </div>
+    <!-- Подсказка управления -->
+    <div class="ui-panel ui-panel-bottom-left">
+      <p id="controlsHint">
+        Управление: A/D или ←/→ — ходьба · W/↑/Space — прыжок · R — перезапуск
+      </p>
+    </div>
+
+    <!-- Экран Game Over -->
+    <div id="gameOverOverlay" class="overlay hidden">
+      <div class="overlay-window">
+        <h2>Game Over</h2>
+        <p id="gameOverText">Ты сорвался вниз.</p>
+        <button id="gameOverRestart">Попробовать ещё раз (R)</button>
       </div>
     </div>
 
-    <!-- ⭐ Ачивки (левый верх) -->
-    <div class="hud hud-top-left">
-      <div class="card achievements-card">
-        <div class="card-title">Достижения</div>
-        <ul id="achievementsList"></ul>
+    <!-- Окно доски объявлений -->
+    <div id="boardOverlay" class="overlay hidden">
+      <div class="overlay-window">
+        <h2>Доска объявлений</h2>
+        <p class="board-text">
+          Привет! Я Тимур / Hiki. Занимаюсь монтажом, моушн-дизайном и работаю с
+          AI-инструментами. Делаю YouTube-ролики, Reels/Shorts и визуальные истории
+          под ключ: от идеи до финального рендера.
+        </p>
+        <ul class="board-links">
+          <li><a href="https://t.me/+zv4JItiEl1ZlYTAy" target="_blank">Telegram / контакты</a></li>
+          <li><a href="https://www.youtube.com/@mr.hiki1" target="_blank">YouTube: mr.hiki1</a></li>
+        </ul>
+        <button id="boardClose">Закрыть</button>
       </div>
-    </div>
-
-    <!-- ⭐ Управление (левый низ) -->
-    <div class="hud hud-bottom-left">
-      <div class="card controls-card">
-        <p>WASD / стрелки — движение</p>
-        <p>E / Enter — взаимодействие</p>
-        <p>⚡ Найди секретный гриб…</p>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Диалоги -->
-  <div id="dialogOverlay" class="dialog-overlay hidden">
-    <div class="dialog-window">
-      <h3 id="dialogTitle"></h3>
-      <p id="dialogText"></p>
-      <a id="dialogLink" href="#" target="_blank"></a>
-      <button id="dialogClose">Закрыть</button>
     </div>
   </div>
 
